@@ -19,15 +19,18 @@ def gadget(color):
       <path d="M20 44 a20 20 0 0 1 40 0" fill="none" stroke="{color}" stroke-width="6"/><rect x="14" y="40" width="14" height="22" rx="5" fill="{color}"/><rect x="52" y="40" width="14" height="22" rx="5" fill="{color}"/></svg>'''
     return 'data:image/svg+xml;base64,' + base64.b64encode(svg.encode()).decode()
 
-S = {'plus': 'LékárnaPlus.cz', 'domov': 'Zdravý domov', 'bylinka': 'Bylinka.cz', 'med': 'MedShop.cz', 'tech': 'TechNoir.cz', 'mob': 'Mobilník.cz', 'zvuk': 'ZvukDomů.cz'}
+S = {'plus': 'LékárnaPlus.cz', 'domov': 'Zdravý domov', 'bylinka': 'Bylinka.cz', 'med': 'MedShop.cz', 'tech': 'TechNoir.cz', 'mob': 'Mobilník.cz', 'zvuk': 'ZvukDomů.cz',
+     'sk-plus': 'LékárnaPlus.sk', 'sk-domov': 'Zdravý domov', 'sk-bylinka': 'Bylinka.sk', 'sk-med': 'MedShop.sk'}
 def off(shop, price, delivery, site='heureka'):
     sid = ('zbozi:' if site == 'zbozi' else 'h-') + shop
-    return {'shopId': sid, 'shopName': S[shop], 'price': price, 'delivery': delivery, 'inStock': True, 'exitUrl': 'https://www.heureka.cz/'}
+    exit_url = 'https://www.heureka.sk/' if shop.startswith('sk-') else 'https://www.heureka.cz/'
+    return {'shopId': sid, 'shopName': S[shop], 'price': price, 'delivery': delivery, 'inStock': True, 'exitUrl': exit_url}
 import time
 now = int(time.time() * 1000) - 2 * 3600 * 1000   # 'prices 2 h ago'
-def item(key, name, img, qty, offers, sources=None):
-    srcs = sources or [{'key': key, 'site': 'heureka.cz', 'url': 'https://www.heureka.cz/', 'name': name, 'image': img, 'capturedAt': now, 'totalOffers': len(offers), 'offers': offers}]
-    return {'key': key, 'name': name, 'image': img, 'url': 'https://www.heureka.cz/', 'site': srcs[0]['site'], 'qty': qty, 'capturedAt': now,
+def item(key, name, img, qty, offers, sources=None, site='heureka.cz'):
+    url = f'https://www.{site}/'
+    srcs = sources or [{'key': key, 'site': site, 'url': url, 'name': name, 'image': img, 'capturedAt': now, 'totalOffers': len(offers), 'offers': offers}]
+    return {'key': key, 'name': name, 'image': img, 'url': url, 'site': srcs[0]['site'], 'qty': qty, 'capturedAt': now,
             'totalOffers': len(offers), 'offers': [o for s in srcs for o in s['offers']], 'sources': srcs}
 
 pharmacy = [
@@ -50,6 +53,25 @@ STATE = {'schema': 2, 'activeBasketId': 'b1', 'shopSlugs': {},
   'shopOverrides': {'n:lekarnaplus': {'fee': 49, 'threshold': 1500}},
   'settings': {'inStockOnly': True, 'maxShops': 3, 'unknownFee': {'CZK': 79, 'EUR': 3.5}, 'language': 'cs'}}
 
+# Slovak listing: the pharmacy basket in € from Heureka.sk; electronics stays in Kč
+# (it combines Heureka.cz with Zboží, which is Czech only).
+pharmacy_sk = [
+  item('hsk/d3', 'Vitamín D3 2000 IU, 90 kapsúl', bottle('#E8A33D'), 2, [off('sk-plus', 5.9, 2.0), off('sk-domov', 5.5, 2.9), off('sk-bylinka', 7.5, 1.5), off('sk-med', 6.2, 2.5)], site='heureka.sk'),
+  item('hsk/probio', 'Probiotiká Komplex, 30 kapsúl', bottle('#5B8DEF'), 1, [off('sk-domov', 11.9, 2.9), off('sk-plus', 13.2, 2.0), off('sk-bylinka', 9.8, 1.5)], site='heureka.sk'),
+  item('hsk/ibu', 'Ibuprofén 400 mg, 24 tabliet', bottle('#E05D5D'), 1, [off('sk-plus', 3.5, 2.0), off('sk-bylinka', 3.9, 1.5), off('sk-domov', 3.4, 2.9), off('sk-med', 3.2, 2.5)], site='heureka.sk'),
+  item('hsk/mg', 'Horčík + B6, 60 tabliet', bottle('#7BC47F'), 1, [off('sk-plus', 4.7, 2.0), off('sk-bylinka', 5.1, 1.5), off('sk-med', 3.9, 2.5)], site='heureka.sk'),
+]
+SK_NAMES = {'Bezdrátová sluchátka X200': 'Bezdrôtové slúchadlá X200', 'Kabel USB-C 2 m': 'Kábel USB-C 2 m'}
+def slovak(st):
+    b1, b2 = st['baskets']
+    b1.update(name='Lekáreň', currency='EUR', items=json.loads(json.dumps(pharmacy_sk)))
+    b2['name'] = 'Elektronika'
+    for it in b2['items']:
+        it['name'] = SK_NAMES[it['name']]
+        for src in it['sources']: src['name'] = it['name']
+    st['shopOverrides'] = {'n:lekarnaplus': {'fee': 2.0, 'threshold': 60}}
+    return st
+
 TEXT = {
  'cs': [('Celý košík co nejlevněji', 'Porovná nákup v jednom obchodě s rozdělením do více obchodů, včetně dopravy.'),
         ('Heureka i Zboží v jednom', 'Stejný obchod na obou webech se počítá jako jeden, stejný produkt můžete sloučit.'),
@@ -57,7 +79,14 @@ TEXT = {
  'en': [('Your whole basket, cheapest', 'Compares one-shop orders with splits across shops, shipping included.'),
         ('Heureka and Zboží together', 'The same shop on both sites counts once; the same product can be combined.'),
         ('Shipping, your way', 'Fees and free-shipping limits are estimated from the site; enter the real ones once.')],
+ 'sk': [('Celý košík čo najlacnejšie', 'Porovná nákup v jednom obchode s rozdelením do viacerých obchodov, vrátane dopravy.'),
+        ('Heureka aj Zboží v jednom', 'Rovnaký obchod na oboch weboch sa počíta ako jeden, rovnaký produkt môžete zlúčiť.'),
+        ('Doprava podľa vás', 'Poplatky a hranice dopravy zadarmo odhadne z porovnávača, skutočné hodnoty doplníte raz.')],
 }
+# Languages to render: all by default, or the ones given, e.g. `python tools/store-assets.py sk`.
+# The promo tile is only redrawn when rendering all languages.
+import sys
+LANGS = sys.argv[1:] or list(TEXT)
 
 def compose(page, shot_png, title, sub, out):
     img = 'data:image/png;base64,' + base64.b64encode(open(shot_png, 'rb').read()).decode()
@@ -82,9 +111,10 @@ with sync_playwright() as p:
     sw.evaluate("() => new Promise(r => { const t = () => chrome.storage.local.get('schema', x => x.schema ? r() : setTimeout(t, 50)); t(); })")
     pop = ctx.new_page(); pop.set_viewport_size({'width': 420, 'height': 900})
     comp = ctx.new_page(); comp.set_viewport_size({'width': 1280, 'height': 800})
-    for lang in ('cs', 'en'):
+    for lang in LANGS:
         st = json.loads(json.dumps(STATE)); st['settings']['language'] = lang
         if lang == 'en': st['baskets'][0]['name'], st['baskets'][1]['name'] = 'Pharmacy', 'Electronics'
+        if lang == 'sk': slovak(st)
         pop.goto('about:blank')   # no open popup may react to the reset
         sw.evaluate("(s) => new Promise(r => chrome.storage.local.clear(() => chrome.storage.local.set(s, r)))", st)
         pop.goto(f'chrome-extension://{ext}/popup/popup.html'); pop.wait_for_selector('.result .total'); pop.wait_for_timeout(300)
@@ -105,6 +135,7 @@ with sync_playwright() as p:
         for i, (t, s) in enumerate(TEXT[lang], 1):
             compose(comp, f'{TMP}/sk-{lang}-{i}.png', t, s, f'{OUT}/screenshot-{lang}-{i}.png')
     # small promo tile (cannot be localized)
+    if sys.argv[1:]: ctx.close(); print('done'); sys.exit()
     icon = 'data:image/png;base64,' + base64.b64encode(open(f'{EXT}/icons/icon128.png', 'rb').read()).decode()
     comp.set_viewport_size({'width': 440, 'height': 280})
     comp.set_content(f'''<html><body style="margin:0;width:440px;height:280px;background:#0A7456;font-family:'Segoe UI',system-ui,sans-serif;overflow:hidden">

@@ -12,8 +12,8 @@ and Slovak listings with the texts below.
 **Category:** Shopping
 
 **Graphics:** icon = from the extension (128×128); screenshots =
-`chrome/screenshot-en-1..3.png` (English listing) and `screenshot-cs-1..3.png`
-(Czech and Slovak listings); small promo tile = `chrome/promo-small-440x280.png`.
+`chrome/screenshot-en-1..3.png` (English listing), `screenshot-cs-1..3.png`
+(Czech listing) and `screenshot-sk-1..3.png` (Slovak listing); small promo tile = `chrome/promo-small-440x280.png`.
 
 ### Description – English
 Collect the products you want to buy on Heureka.cz, Heureka.sk or Zboží.cz and see

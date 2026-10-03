@@ -90,7 +90,8 @@ npm run lint                # Mozilla addons-linter; expect 0 errors, 12 known w
 npm run build               # dist/lokis-basket-optimizer-{chrome,firefox}-<version>.zip
 npm run test:e2e            # browser tests; first: pip install playwright beautifulsoup4 lxml
                             #                and python -m playwright install chromium
-python tools/store-assets.py  # store screenshots + promo tile from the real extension (demo data)
+python tools/store-assets.py  # store screenshots (en, cs, sk) + promo tile from the real extension (demo data);
+                            #   `... store-assets.py sk` renders only the given languages
 ```
 
 Dev install: `chrome://extensions` → Developer mode → Load unpacked → `extension/`.
