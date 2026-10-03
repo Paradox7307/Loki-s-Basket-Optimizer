@@ -1,0 +1,13 @@
+node_modules/
+dist/
+__pycache__/
+*.zip
+.DS_Store
+Thumbs.db
+
+# Saved Heureka/Zboží pages are third-party content: keep them local only.
+tests/fixtures/*
+!tests/fixtures/README.md
+
+# Browser-test screenshots
+tests/e2e/output/
