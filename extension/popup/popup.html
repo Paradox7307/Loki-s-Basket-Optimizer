@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Loki's Basket Optimizer</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header class="top">
+    <span class="app" data-i18n="appTitle">Loki's Basket Optimizer</span>
+    <button type="button" class="ghost" id="open-tab" data-i18n="openInTab">Open in tab</button>
+  </header>
+
+  <div class="basketbar" id="basketbar"></div>
+
+  <main>
+    <section id="access" class="access" hidden></section>
+    <section id="result" aria-live="polite"></section>
+    <section id="products"></section>
+    <details id="shipping">
+      <summary></summary>
+      <div id="shipping-body"></div>
+    </details>
+    <details id="settings">
+      <summary data-i18n="settings">Settings</summary>
+      <div class="settings-body">
+        <label class="field"><span data-i18n="language">Language</span>
+          <select id="language"></select>
+        </label>
+        <label class="check"><input type="checkbox" id="in-stock-only"> <span data-i18n="inStockOnly">Only offers in stock</span></label>
+        <label class="field"><span data-i18n="maxShops">Maximum number of shops per order</span>
+          <select id="max-shops">
+            <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+            <option value="4">4</option><option value="5">5</option>
+          </select>
+        </label>
+        <label class="field"><span data-i18n="unknownFee">Shipping fee when the site shows none</span>
+          <span class="money-input"><input type="number" id="unknown-fee" min="0" step="any" inputmode="decimal"> <span id="unknown-fee-cur"></span></span>
+        </label>
+      </div>
+    </details>
+  </main>
+
+  <script src="../lib/i18n.js"></script>
+  <script src="../lib/store.js"></script>
+  <script src="../lib/optimizer.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

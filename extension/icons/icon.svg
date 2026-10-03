@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <rect x="4" y="4" width="120" height="120" rx="28" fill="#0A7456"/>
+  <!-- basket handle -->
+  <path d="M40 54 L56 26 M88 54 L72 26" stroke="#fff" stroke-width="9" stroke-linecap="round" fill="none"/>
+  <!-- basket body -->
+  <path d="M22 52 H106 L96 102 Q94.5 108 88 108 H40 Q33.5 108 32 102 Z" fill="#fff"/>
+  <!-- pharmacy cross -->
+  <path d="M58 64 h12 v10 h10 v12 h-10 v10 h-12 v-10 h-10 v-12 h10 z" fill="#0A7456"/>
+</svg>

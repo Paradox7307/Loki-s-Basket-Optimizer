@@ -1,0 +1,41 @@
+const fs = require('fs');
+const { JSDOM } = require('jsdom');
+const assert = require('assert');
+const Z = require('../../extension/lib/zbozi.js');
+const { fixture } = require('./_fixtures');
+const html = fixture('zbozi-product-embedded.html');
+const url = 'https://www.zbozi.cz/vyrobek/samsung-galaxy-a57-5g/?varianta=8-128-gb-awesome-navy';
+const dom = new JSDOM(html, { url });
+const p = Z.parseDoc(dom.window.document, dom.window.location);
+console.log({ key: p.key, name: p.name, url: p.url, image: p.image && p.image.slice(0, 60), totalOffers: p.totalOffers, currency: p.currency });
+console.table(p.offers.map(o => ({ shop: o.shopName, price: o.price, delivery: o.delivery, storeOnly: !!o.storePickupOnly, inStock: o.inStock, link: (o.exitUrl || '').slice(0, 40) })));
+assert.strictEqual(p.key, 'zbozi.cz/samsung-galaxy-a57-5g?varianta=8-128-gb-awesome-navy');
+assert.strictEqual(p.name, 'Samsung Galaxy A57 5G 8/128 GB Awesome Navy');
+assert.strictEqual(p.totalOffers, 31);
+assert.strictEqual(p.offers.length, 5);
+const by = Object.fromEntries(p.offers.map(o => [o.shopName, o]));
+assert.strictEqual(by['Trendmobil.cz'].price, 8150);
+assert.strictEqual(by['Trendmobil.cz'].delivery, 50, 'cheapest of 70 delivery / 50 pickup-point');
+assert.strictEqual(by['iMobily.eu'].delivery, 0, 'free pickup point beats 149 delivery');
+assert.strictEqual(by['MobilyOstrava.cz'].delivery, 0);
+assert.strictEqual(by['MobilyOstrava.cz'].storePickupOnly, true, 'no delivery, one pickup place = own store');
+assert.ok(!by['1-2umobil.cz'].storePickupOnly);
+assert.ok(by['sccom.cz'].exitUrl.startsWith('https://www.zbozi.cz/clickthru?'));
+assert.ok(Z.isProductPage(null, dom.window.location));
+// URL without ?varianta -> default variant from the data
+const dom2 = new JSDOM(html, { url: 'https://www.zbozi.cz/vyrobek/samsung-galaxy-a57-5g/' });
+assert.strictEqual(Z.parseDoc(dom2.window.document, dom2.window.location).key, p.key, 'default variant gets the same key');
+// another variant in the URL than in the embedded data -> stale -> null (extract() then re-fetches)
+const dom3 = new JSDOM(html, { url: 'https://www.zbozi.cz/vyrobek/samsung-galaxy-a57-5g/?varianta=8-256-gb-awesome-navy' });
+assert.strictEqual(Z.parseDoc(dom3.window.document, dom3.window.location), null);
+(async () => {
+  const fetched = [];
+  const fakeFetch = async (u) => { fetched.push(u);
+    if (u.includes('/api/')) return { ok: false };
+    return { ok: true, text: async () => html.replace(/"varianta":"8-128-gb-awesome-navy"/g, '"varianta":"8-256-gb-awesome-navy"') }; };
+  const r = await Z.extract(dom3.window.document, dom3.window.location, fakeFetch, dom3.window.DOMParser);
+  assert.strictEqual(fetched[0], dom3.window.location.href, 'page re-read first');
+  assert.ok(fetched[1].includes('/api/v3/product/samsung-galaxy-a57-5g/') && fetched[1].includes('productVariant=8-256-gb-awesome-navy'), 'then API for that variant');
+  assert.ok(r && r.key.endsWith('8-256-gb-awesome-navy'), 'stale page re-read from current URL');
+  console.log('ALL ZBOZI PARSER TESTS PASSED');
+})();
